@@ -2,6 +2,7 @@ import { of, interval, Subscription, Subject } from 'rxjs';
 import { map, scan, shareReplay, publishReplay, refCount, tap, takeUntil } from 'rxjs/operators';
 
 let shareReplaySubscription: Subscription;
+let shareReplayRefCountSubscription: Subscription;
 let publishReplaySubscription: Subscription;
 
 const timer$ = interval(1000).pipe(
@@ -9,6 +10,11 @@ const timer$ = interval(1000).pipe(
 );
 
 const timerWithShareReplay$ = timer$.pipe(
+  tap(counter => console.log('Share replay current value', counter)),
+  shareReplay(1),
+);
+
+const timerWithShareReplayRefCount$ = timer$.pipe(
   tap(counter => console.log('Share replay current value', counter)),
   shareReplay({ refCount: true, bufferSize: 1 }),
 );
@@ -28,6 +34,15 @@ function subscribeWithShareReplay(): void {
     .subscribe(counter => console.log('Share replay subscription', counter));
 }
 
+function subscribeWithShareReplayRefCount(): void {
+  if (shareReplayRefCountSubscription) {
+    unsubscribeShareReplayRefCount();
+  }
+
+  shareReplayRefCountSubscription = timerWithShareReplayRefCount$
+    .subscribe(counter => console.log('Share replay subscription with Ref Count', counter));
+}
+
 function subscribeWithPublishReplay(): void {
   if (publishReplaySubscription) {
     unsubscribePublishReplay();
@@ -41,6 +56,10 @@ function unsubscribeShareReplay(): void {
   shareReplaySubscription.unsubscribe();
 }
 
+function unsubscribeShareReplayRefCount(): void {
+  shareReplayRefCountSubscription.unsubscribe();
+}
+
 function unsubscribePublishReplay(): void {
   publishReplaySubscription.unsubscribe();
 }
@@ -49,3 +68,6 @@ document.querySelector('#button1').addEventListener('click', () => subscribeWith
 document.querySelector('#button2').addEventListener('click', () => unsubscribeShareReplay());
 document.querySelector('#button3').addEventListener('click', () => subscribeWithPublishReplay());
 document.querySelector('#button4').addEventListener('click', () => unsubscribePublishReplay());
+
+document.querySelector('#button5').addEventListener('click', () => subscribeWithShareReplayRefCount());
+document.querySelector('#button6').addEventListener('click', () => unsubscribeShareReplayRefCount());
