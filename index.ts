@@ -1,12 +1,20 @@
-import { of, interval, Subscription, Subject } from 'rxjs'; 
-import { map, scan, shareReplay, publishReplay, refCount, tap, takeUntil } from 'rxjs/operators';
+import { of, interval, Subscription, Subject, throwError } from 'rxjs'; 
+import { map, scan, shareReplay, publishReplay, refCount, tap, takeUntil, catchError } from 'rxjs/operators';
 
 let shareReplaySubscription: Subscription;
 let shareReplayRefCountSubscription: Subscription;
 let publishReplaySubscription: Subscription;
 
 const timer$ = interval(1000).pipe(
-  scan(counter => counter + 1, 0),
+  scan(counter => {return counter + 1;
+    }, 0),
+  map(data => {
+    if (data === 3) {
+      throw new Error("403");
+    } else {
+      return data;
+    }
+  })
 );
 
 const timerWithShareReplay$ = timer$.pipe(
@@ -40,6 +48,10 @@ function subscribeWithShareReplayRefCount(): void {
   }
 
   shareReplayRefCountSubscription = timerWithShareReplayRefCount$
+      .pipe(catchError(error => {
+      console.log('I CAUGHT YOUUUUUUUUU ERRORRRRR', error);
+      return of(error);
+    }))
     .subscribe(counter => console.log('Share replay subscription with Ref Count', counter));
 }
 
@@ -49,6 +61,10 @@ function subscribeWithPublishReplay(): void {
   }
 
   publishReplaySubscription = timerWithPublishReplay$
+    .pipe(catchError(error => {
+      console.log('I CAUGHT YOUUUUUUUUU ERRORRRRR', error);
+      return of(error);
+    }))
     .subscribe(counter => console.log('Publish replay subscription', counter));
 }
 
